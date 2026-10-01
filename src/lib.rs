@@ -1,10 +1,10 @@
+pub use axum;
+
 pub mod extractors;
 
 pub mod config;
 pub mod services;
 pub mod controller;
-
-pub use axum;
 
 use std::marker::PhantomData;
 use std::net::SocketAddr;
