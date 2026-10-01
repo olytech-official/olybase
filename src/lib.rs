@@ -4,6 +4,8 @@ pub mod config;
 pub mod services;
 pub mod controller;
 
+pub use axum;
+
 use std::marker::PhantomData;
 use std::net::SocketAddr;
 #[cfg(all(feature = "ws", feature = "s3"))]
