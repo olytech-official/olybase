@@ -1,0 +1,77 @@
+[package]
+name = "olybase"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+default = []
+# --- web features ---
+tls = ["dep:axum-server", "axum-server/tls-rustls"]
+tls-autogen = ["tls", "dep:rcgen"]
+compression = ["tower-http/compression-full"]
+private_cookie = ["dep:axum-extra", "axum-extra/cookie-private"]
+rate-limit = ["dep:tower_governor", "tower_governor/axum", "dep:governor"]
+tracing = [
+    "dep:tracing",
+    "dep:tracing-subscriber",
+    "tower-http/trace",
+    "tower-http/request-id",
+    "tower-http/util"
+]
+
+# --- olybase features ---
+# security
+jwt = [
+    "dep:jsonwebtoken",
+    "dep:uuid",
+    "private_cookie"
+]
+jwt-autogen = ["jwt", "dep:rcgen"]
+refresh-token = ["dep:rand", "dep:sha2", "dep:uuid", "private_cookie"]
+password-hasher = ["dep:argon2", "argon2/password-hash"]
+
+# storage
+s3 = ["dep:rust-s3"]
+sqlx-postgres = ["dep:sqlx", "sqlx/postgres"]
+sqlx-sqlite = ["dep:sqlx", "sqlx/sqlite"]
+
+ws = ["jwt", "axum/ws", "dep:futures-util", "dep:dashmap", "dep:serde_json"]
+
+[dependencies]
+# --- Web Framework & Networking ---
+axum = { version = "0.8.9", default-features = false, features = ["tokio", "http1", "json"] }
+axum-extra = { version = "0.12.6", optional = true, default-features = false }
+axum-server = { version = "0.8.0", optional = true, default-features = false }
+tower-http = { version = "0.7.1", default-features = false, features = ["cors"] }
+tower_governor = { version = "0.8.0", optional = true, default-features = false }
+governor = { version = "0.10.4", optional = true, default-features = false }
+tracing = { version = "0.1.41", optional = true }
+tracing-subscriber = { version = "0.3.19", optional = true, features = ["env-filter", "fmt"] }
+futures-util = { version = "0.3", optional = true, default-features = false, features = ["sink", "std"] }
+
+# --- Data Serialization & Schemas ---
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = { version = "1.0.151", optional = true, default-features = false,}
+
+# --- Async & Runtime ---
+tokio = { version = "1", features = ["full"] }
+
+# --- Database & Storage ---
+rust-s3 = { version = "0.37", optional = true, default-features = false, features = ["tokio-rustls-tls"] }
+sqlx = { version = "0.9", optional = true, default-features = false, features = ["runtime-tokio", "tls-rustls-aws-lc-rs", "migrate", "macros"] }
+
+# --- Security & Crypto ---
+jsonwebtoken = { version = "11.0", optional = true, default-features = false, features = ["rust_crypto", "use_pem"] }
+rcgen = { version = "0.14.10", optional = true, default-features = false, features = ["ring", "pem"] }
+sha2 = { version = "0.11", optional = true, default-features = false }
+rand = { version = "0.10.3", optional = true, default-features = false, features = ["std", "std_rng", "thread_rng"] }
+argon2 = { version = "0.6", optional = true}
+
+# --- Utilities & Configuration ---
+uuid = { version = "1", optional = true, default-features = false, features = ["v7", "serde", "std"] }
+chrono = { version = "0.4", default-features = false, features = ["serde", "clock"] }
+time = { version = "0.3.55", default-features = false}
+dotenvy = { version = "0.15", default-features = false }
+envy = { version = "0.4", default-features = false }
+dashmap = { version = "6.2.1", optional = true, default-features = false }
+thiserror = "2.0.20"
