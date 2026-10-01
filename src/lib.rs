@@ -8,7 +8,7 @@ pub mod controller;
 
 use std::marker::PhantomData;
 use std::net::SocketAddr;
-#[cfg(all(feature = "ws", feature = "s3"))]
+#[cfg(any(feature = "ws", feature = "s3", feature = "jwt"))]
 use std::sync::Arc;
 use axum::http::header::{InvalidHeaderValue, ACCEPT, AUTHORIZATION, CONTENT_TYPE};
 use axum::http::{HeaderValue, Method};
@@ -23,6 +23,8 @@ use axum_extra::extract::cookie::Key;
 use crate::services::gateway::service::GatewayService;
 #[cfg(feature = "ws")]
 use crate::services::gateway::ws_router::WsRouter;
+#[cfg(feature = "jwt")]
+use crate::services::security::tokens::jwt::JwtService;
 #[cfg(feature = "s3")]
 use crate::services::storage::s3::S3Storage;
 
@@ -49,6 +51,8 @@ pub struct AppState<T> {
     pub ws_router: WsRouter<T>,
     #[cfg(feature = "s3")]
     pub s3_storage: Arc<S3Storage>,
+    #[cfg(feature = "jwt")]
+    pub jwt_service: Arc<JwtService>,
 
     pub _marker: PhantomData<fn() -> T>,
 }
@@ -65,6 +69,21 @@ impl<T> AppState<T> {
             client: _config.build_s3_client()?,
         });
 
+        #[cfg(feature = "jwt")]
+        let jwt_service = Arc::new(JwtService::new(_config.clone())?);
+
+        #[cfg(feature = "ws")]
+        {
+            let gateway = state.gateway.clone();
+            tokio::spawn(async move {
+                let mut interval = tokio::time::interval(std::time::Duration::from_secs(300));
+                loop {
+                    interval.tick().await;
+                    gateway.cleanup().await;
+                }
+            });
+        }
+
         Ok(Self {
             #[cfg(feature = "private_cookie")]
             key: Key::from(_config.cookie_secret.as_bytes()),
@@ -74,6 +93,8 @@ impl<T> AppState<T> {
             ws_router,
             #[cfg(feature = "s3")]
             s3_storage,
+            #[cfg(feature = "jwt")]
+            jwt_service,
 
             _marker: PhantomData,
         })
@@ -128,18 +149,6 @@ impl Server {
 
         if let Some(cors) = self.cors_layer.take() {
             app = app.layer(cors);
-        }
-
-        #[cfg(feature = "ws")]
-        {
-            let gateway = state.gateway.clone();
-            tokio::spawn(async move {
-                let mut interval = tokio::time::interval(std::time::Duration::from_secs(300));
-                loop {
-                    interval.tick().await;
-                    gateway.cleanup().await;
-                }
-            });
         }
 
         #[cfg(feature = "rate-limit")]
@@ -203,10 +212,10 @@ impl Server {
     }
 
     /// starts the `router`
-    pub async fn start_server(self) -> Result<(), Box<dyn std::error::Error>> {
-        let Server { config, app, .. } = self;
-        let app = app.ok_or("Router not initialized. Did you call .with_router(router, state)?")?;
-
+    pub async fn start_server(mut self) -> Result<(), Box<dyn std::error::Error>> {
+        let app = self.app.take().ok_or("Router not initialized. Did you call .with_router(router, state)?")?;
+        let config = self.config;
+        
         let addr: SocketAddr = format!("0.0.0.0:{}", config.port).parse()?;
 
         #[cfg(feature = "tracing")]

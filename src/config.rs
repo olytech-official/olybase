@@ -10,6 +10,8 @@ use serde::Deserialize;
 use sqlx::PgPool;
 #[cfg(feature = "sqlx-sqlite")]
 use sqlx::SqlitePool;
+#[cfg(feature = "jwt")]
+use crate::services::security::tokens::jwt::JwtError;
 
 fn default_port() -> u16 { 8000 }
 fn default_cors_origin() -> String { "http://localhost:3000".into() }
@@ -38,6 +40,10 @@ pub enum ConfigError {
     #[cfg(feature = "jwt")]
     #[error("JWT key paths are missing and auto-generation feature 'jwt-autogen' is disabled")]
     MissingJwtPaths,
+
+    #[cfg(feature = "jwt")]
+    #[error("JWT service error: {0}")]
+    JwtService(#[from] JwtError),
 
     #[cfg(any(feature = "sqlx-postgres", feature = "sqlx-sqlite"))]
     #[error("Database error: {0}")]
@@ -98,7 +104,7 @@ pub struct AppConfig {
     #[cfg(feature = "s3")]
     pub s3_bucket: String,
 
-    #[cfg(feature = "sqlx-postgres")]
+    #[cfg(any(feature = "sqlx-postgres", feature = "sqlx-sqlite"))]
     pub database_url: String,
 }
 
