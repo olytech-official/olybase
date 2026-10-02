@@ -1,7 +1,7 @@
 pub use axum;
 
 #[cfg(feature = "private_cookie")]
-use axum_extra;
+pub use axum_extra;
 
 pub mod extractors;
 pub mod config;
