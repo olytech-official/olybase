@@ -44,56 +44,69 @@ impl<T> FromRef<AppState<T>> for Arc<JwtService> {
 }
 
 #[cfg(feature = "tracing")]
-#[derive(Debug, Default, Clone)]
-pub struct OlybaseTracing {
-    debug: Option<bool>,
-    info: Option<bool>,
-    warn: Option<bool>,
+pub fn init_tracing() {
+    use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
+
+    tracing_subscriber::registry()
+        .with(
+            EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| EnvFilter::new("info,tower_http=debug")),
+        )
+        .with(tracing_subscriber::fmt::layer())
+        .init();
 }
 
-#[cfg(feature = "tracing")]
-impl OlybaseTracing {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    pub fn with_debug(mut self) -> Self {
-        self.debug = Some(true);
-        self
-    }
-
-    pub fn with_info(mut self) -> Self {
-        self.info = Some(true);
-        self
-    }
-
-    pub fn with_warn(mut self) -> Self {
-        self.warn = Some(true);
-        self
-    }
-
-    pub fn start(self) {
-        use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
-
-        let default_level = if self.debug.unwrap_or(false) {
-            "debug,tower_http=debug"
-        } else if self.info.unwrap_or(false) {
-            "info,tower_http=debug"
-        } else if self.warn.unwrap_or(false) {
-            "warn,tower_http=warn"
-        } else {
-            "info"
-        };
-
-        tracing_subscriber::registry()
-            .with(
-                EnvFilter::try_from_default_env()
-                    .unwrap_or_else(|_| EnvFilter::new(default_level)),
-            )
-            .with(tracing_subscriber::fmt::layer())
-            .init();
-    }
-}
+// #[cfg(feature = "tracing")]
+// #[derive(Debug, Default, Clone)]
+// pub struct OlybaseTracing {
+//     debug: Option<bool>,
+//     info: Option<bool>,
+//     warn: Option<bool>,
+// }
+//
+// #[cfg(feature = "tracing")]
+// impl OlybaseTracing {
+//     pub fn new() -> Self {
+//         Self::default()
+//     }
+//
+//     pub fn with_debug(mut self) -> Self {
+//         self.debug = Some(true);
+//         self
+//     }
+//
+//     pub fn with_info(mut self) -> Self {
+//         self.info = Some(true);
+//         self
+//     }
+//
+//     pub fn with_warn(mut self) -> Self {
+//         self.warn = Some(true);
+//         self
+//     }
+//
+//     pub fn start(self) {
+//         use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
+//
+//         let default_level = if self.debug.unwrap_or(false) {
+//             "debug,tower_http=debug"
+//         } else if self.info.unwrap_or(false) {
+//             "info,tower_http=debug"
+//         } else if self.warn.unwrap_or(false) {
+//             "warn,tower_http=warn"
+//         } else {
+//             "info"
+//         };
+//
+//         tracing_subscriber::registry()
+//             .with(
+//                 EnvFilter::try_from_default_env()
+//                     .unwrap_or_else(|_| EnvFilter::new(default_level)),
+//             )
+//             .with(tracing_subscriber::fmt::layer())
+//             .init();
+//     }
+// }
 
 #[derive(Clone)]
 pub struct AppState<T> {
