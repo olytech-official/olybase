@@ -12,6 +12,8 @@ use sqlx::PgPool;
 use sqlx::SqlitePool;
 #[cfg(feature = "jwt")]
 use crate::services::security::tokens::jwt::JwtError;
+#[cfg(feature = "refresh-token")]
+use crate::services::security::tokens::refresh::RefreshError;
 
 fn default_port() -> u16 { 8000 }
 fn default_cors_origin() -> String { "http://localhost:3000".into() }
@@ -25,6 +27,12 @@ fn default_burst() -> u32 { 5 }
 
 #[cfg(feature = "jwt")]
 fn default_jwt_exp() -> u64 { 3600 }
+
+#[cfg(feature = "refresh-token")]
+fn default_refresh_exp() -> u64 { 604800 }
+
+#[cfg(feature = "refresh-token")]
+fn default_refresh_path() -> String { "/auth/refresh".to_string() }
 
 #[cfg(feature = "s3")]
 fn default_s3_region() -> String { "us-east-1".into() }
@@ -44,6 +52,10 @@ pub enum ConfigError {
     #[cfg(feature = "jwt")]
     #[error("JWT service error: {0}")]
     JwtService(#[from] JwtError),
+
+    #[cfg(feature = "refresh-token")]
+    #[error("Refresh token service error: {0}")]
+    RefreshService(#[from] RefreshError),
 
     #[cfg(any(feature = "sqlx-postgres", feature = "sqlx-sqlite"))]
     #[error("Database error: {0}")]
@@ -91,6 +103,13 @@ pub struct AppConfig {
     pub jwt_private_key_path: Option<String>,
     #[cfg(feature = "jwt")]
     pub jwt_public_key_path: Option<String>,
+
+    #[cfg(feature = "refresh-token")]
+    #[serde(default = "default_refresh_exp")]
+    pub refresh_exp: u64,
+    #[cfg(feature = "refresh-token")]
+    #[serde(default = "default_refresh_path")]
+    pub refresh_path: String,
 
     #[cfg(feature = "s3")]
     pub rustfs_access_key: String,

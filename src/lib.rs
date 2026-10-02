@@ -28,6 +28,7 @@ use crate::services::gateway::service::GatewayService;
 use crate::services::gateway::ws_router::WsRouter;
 #[cfg(feature = "jwt")]
 use crate::services::security::tokens::jwt::JwtService;
+use crate::services::security::tokens::refresh::RefreshTokenService;
 #[cfg(feature = "s3")]
 use crate::services::storage::s3::S3Storage;
 
@@ -42,6 +43,13 @@ impl<T> FromRef<AppState<T>> for Key {
 impl<T> FromRef<AppState<T>> for Arc<JwtService> {
     fn from_ref(state: &AppState<T>) -> Self {
         state.jwt_service.clone()
+    }
+}
+
+#[cfg(feature = "refresh-token")]
+impl<T> FromRef<AppState<T>> for Arc<RefreshTokenService> {
+    fn from_ref(state: &AppState<T>) -> Self {
+        state.refresh_service.clone()
     }
 }
 
@@ -122,6 +130,8 @@ pub struct AppState<T> {
     pub s3_storage: Arc<S3Storage>,
     #[cfg(feature = "jwt")]
     pub jwt_service: Arc<JwtService>,
+    #[cfg(feature = "refresh-token")]
+    pub refresh_service: Arc<RefreshTokenService>,
 
     pub _marker: PhantomData<fn() -> T>,
 }
@@ -140,6 +150,9 @@ impl<T> AppState<T> {
 
         #[cfg(feature = "jwt")]
         let jwt_service = Arc::new(JwtService::new(config.clone())?);
+
+        #[cfg(feature = "refresh-token")]
+        let refresh_service = Arc::new(RefreshTokenService::new(config.clone()));
 
         #[cfg(feature = "ws")]
         {
@@ -164,6 +177,8 @@ impl<T> AppState<T> {
             s3_storage,
             #[cfg(feature = "jwt")]
             jwt_service,
+            #[cfg(feature = "refresh-token")]
+            refresh_service,
 
             _marker: PhantomData,
         })

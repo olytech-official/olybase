@@ -7,6 +7,7 @@ use sha2::{Digest, Sha256};
 use thiserror::Error;
 use time::OffsetDateTime;
 use uuid::Uuid;
+use crate::config::AppConfig;
 
 #[derive(Debug, Error)]
 pub enum RefreshError {
@@ -50,10 +51,10 @@ pub struct RefreshTokenService {
 }
 
 impl RefreshTokenService {
-    pub fn new(exp: u64) -> Self {
+    pub fn new(config: AppConfig) -> Self {
         Self {
-            exp,
-            cookie_path: "/auth/refresh".to_string(),
+            exp: config.refresh_exp,
+            cookie_path: config.refresh_path,
         }
     }
 
