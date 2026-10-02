@@ -1,6 +1,4 @@
 use std::fs;
-use std::sync::Arc;
-use axum::extract::FromRef;
 use crate::config::AppConfig;
 use axum_extra::extract::cookie::{Cookie, SameSite};
 use chrono::{Duration, Utc};
@@ -10,7 +8,6 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use time::OffsetDateTime;
 use uuid::Uuid;
-use crate::AppState;
 
 #[derive(Debug, Error)]
 pub enum JwtError {
@@ -53,12 +50,6 @@ pub struct JwtService {
     encoding_key: EncodingKey,
     decoding_key: DecodingKey,
     validation: Validation,
-}
-
-impl<T> FromRef<AppState<T>> for Arc<JwtService> {
-    fn from_ref(state: &AppState<T>) -> Self {
-        state.jwt_service.clone()
-    }
 }
 
 impl JwtService {

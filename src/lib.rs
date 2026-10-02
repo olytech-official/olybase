@@ -13,6 +13,7 @@ use std::sync::Arc;
 use axum::http::header::{InvalidHeaderValue, ACCEPT, AUTHORIZATION, CONTENT_TYPE};
 use axum::http::{HeaderValue, Method};
 use axum::{Router};
+use axum::extract::FromRef;
 use tokio::net::TcpListener;
 use tower_http::cors::CorsLayer;
 use crate::config::{AppConfig, ConfigError};
@@ -27,6 +28,20 @@ use crate::services::gateway::ws_router::WsRouter;
 use crate::services::security::tokens::jwt::JwtService;
 #[cfg(feature = "s3")]
 use crate::services::storage::s3::S3Storage;
+
+#[cfg(feature = "private_cookie")]
+impl<T> FromRef<AppState<T>> for Key {
+    fn from_ref(state: &AppState<T>) -> Self {
+        state.key.clone()
+    }
+}
+
+#[cfg(feature = "jwt")]
+impl<T> FromRef<AppState<T>> for Arc<JwtService> {
+    fn from_ref(state: &AppState<T>) -> Self {
+        state.jwt_service.clone()
+    }
+}
 
 #[cfg(feature = "tracing")]
 pub fn init_tracing() {
