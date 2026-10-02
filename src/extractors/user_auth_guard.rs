@@ -50,7 +50,9 @@ where
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
         let jwt_svc = Arc::<JwtService>::from_ref(state);
 
-        let jar = PrivateCookieJar::<Key>::from_request_parts(parts, state)
+        let key = Key::from_ref(state);
+
+        let jar = PrivateCookieJar::from_request_parts(parts, &key)
             .await
             .map_err(|_| TokenError::Missing)?;
 
