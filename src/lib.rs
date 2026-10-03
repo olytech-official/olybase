@@ -3,6 +3,9 @@ pub use axum;
 #[cfg(feature = "private_cookie")]
 pub use axum_extra;
 
+#[cfg(any(feature = "sqlx-postgres", feature = "sqlx-sqlite"))]
+pub use sqlx;
+
 pub mod extractors;
 pub mod config;
 pub mod services;
