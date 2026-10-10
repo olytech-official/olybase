@@ -1,0 +1,8 @@
+[package]
+name = "olybase-storage"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+rust-s3 = { version = "0.38.0", default-features = false, features = ["tokio-rustls-tls"] }
+thiserror = "2.0.21"

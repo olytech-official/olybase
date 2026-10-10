@@ -1,0 +1,25 @@
+[package]
+name = "olybase-security"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+jwt-autogen = ["dep:rcgen"]
+refresh-token = ["dep:rand", "dep:sha2", "dep:uuid"]
+
+password-hasher = ["dep:argon2"]
+
+[dependencies]
+olybase-core = { path = "../olybase-core" }
+axum = { version = "0.8.9", default-features = false, features = ["tokio", "http1", "json"] }
+jsonwebtoken = { version = "11.0", default-features = false, features = ["rust_crypto", "use_pem"] }
+rand = { version = "0.10.3", optional = true, default-features = false, features = ["std", "std_rng", "thread_rng"] }
+rcgen = { version = "0.14.10", optional = true, default-features = false, features = ["ring", "pem"] }
+uuid = { version = "1", optional = true, default-features = false, features = ["v7", "serde", "std"] }
+axum-extra = { version = "0.12.6", default-features = false, features = ["cookie-private"] }
+chrono = { version = "0.4", default-features = false, features = ["serde", "clock"] }
+sha2 = { version = "0.11", optional = true, default-features = false }
+serde = { version = "1.0.229", features = ["derive"] }
+time = { version = "0.3.55", default-features = false}
+argon2 = { version = "0.6", optional = true, features = ["password-hash"]}
+thiserror = "2.0.20"

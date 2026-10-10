@@ -1,0 +1,54 @@
+[package]
+name = "olybase"
+version = "0.1.0"
+edition = "2024"
+
+[workspace]
+members = [
+    "crates/olybase-core",
+    "crates/olybase-security",
+    "crates/olybase-storage",
+    "crates/olybase-ws",
+    "crates/olybase-web",
+]
+resolver = "3"
+
+[workspace.dependencies]
+axum = { version = "0.8.9", default-features = false }
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+tracing = "0.1.41"
+thiserror = "2.0.20"
+
+[dependencies]
+#olybase-core = { path = "crates/olybase-core" }
+olybase-security = { path = "crates/olybase-security", optional = true }
+olybase-storage = { path = "crates/olybase-storage", optional = true }
+olybase-ws = { path = "crates/olybase-ws", optional = true }
+olybase-web = { path = "crates/olybase-web", optional = true }
+
+[features]
+default = []
+
+# --- web ---
+web = ["dep:olybase-web"]
+tls = ["web", "olybase-web/tls"]
+tls-autogen = ["web", "olybase-web/tls-autogen"]
+compression = ["web", "olybase-web/compression"]
+rate-limit = ["web", "olybase-web/rate-limit"]
+tracing = ["web", "olybase-web/tracing"]
+
+# --- security ---
+security = ["dep:olybase-security"]
+jwt-autogen = ["security", "olybase-security/jwt-autogen"]
+refresh-token = ["security", "olybase-security/refresh-token"]
+password-hasher = ["security", "olybase-security/password-hasher"]
+
+# --- websocket ---
+ws = ["dep:olybase-ws"]
+
+# --- storage ---
+storage = ["dep:olybase-storage"]
+
+
+

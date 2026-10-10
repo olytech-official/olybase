@@ -1,0 +1,14 @@
+[package]
+name = "olybase-ws"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+olybase-core = { path = "../olybase-core" }
+dashmap = { version = "6.2.1", default-features = false }
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = { version = "1.0.151", default-features = false,}
+thiserror = "2.0.21"
+axum = { version = "0.8.9", default-features = false, features = ["tokio", "ws"] }
+futures-util = "0.3.34"

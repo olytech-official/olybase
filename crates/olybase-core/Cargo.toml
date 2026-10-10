@@ -1,0 +1,9 @@
+[package]
+name = "olybase-core"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+axum = { version = "0.8.9", default-features = false, features = ["tokio", "http1", "json"] }
+serde = { version = "1.0.229", features = ["derive"] }
+chrono = { version = "0.4", default-features = false, features = ["serde", "clock"] }
