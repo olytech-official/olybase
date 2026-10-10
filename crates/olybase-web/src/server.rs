@@ -1,6 +1,5 @@
 use std::net::{SocketAddr};
 use tokio::net::TcpListener;
-use axum::extract::State;
 use axum::http::{HeaderValue, Method};
 use axum::http::header::{InvalidHeaderValue, ACCEPT, AUTHORIZATION, CONTENT_TYPE};
 use axum::Router;
@@ -83,8 +82,8 @@ impl Server {
     /// builds the `router`
     pub fn with_router<T>(
         mut self,
-        router: Router<State<T>>,
-        state: State<T>
+        router: Router<T>,
+        state: T,
     ) -> Self where
         T: Send + Sync + Clone + 'static,
     {

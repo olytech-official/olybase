@@ -3,8 +3,7 @@ use std::sync::Arc;
 use axum::extract::{FromRef, FromRequestParts};
 use axum::http::request::Parts;
 use axum::response::{IntoResponse, Response};
-use axum_extra::extract::cookie::Key;
-use axum_extra::extract::PrivateCookieJar;
+use axum_extra::extract::{CookieJar};
 use serde::de::DeserializeOwned;
 use olybase_core::response::ApiResponse;
 use olybase_core::user::UserData;
@@ -57,7 +56,6 @@ impl<S, T, ID> FromRequestParts<S> for AuthenticatedUser<T, ID>
 where
     S: Send + Sync,
     Arc<JwtService>: FromRef<S>,
-    Key: FromRef<S>,
     T: DeserializeOwned + Send + Sync + 'static,
     ID: DeserializeOwned + Send + Sync + 'static,
 {
@@ -66,7 +64,7 @@ where
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
         let jwt_svc = Arc::<JwtService>::from_ref(state);
 
-        let jar = PrivateCookieJar::<Key>::from_request_parts(parts, state)
+        let jar = CookieJar::from_request_parts(parts, state)
             .await
             .map_err(|_| TokenError::Missing)?;
 
