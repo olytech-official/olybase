@@ -1,3 +1,4 @@
+pub use olybase_core;
 #[cfg(feature = "security")]
 pub use olybase_security;
 #[cfg(feature = "storage")]

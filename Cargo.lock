@@ -1766,6 +1766,7 @@ dependencies = [
 name = "olybase"
 version = "0.1.0"
 dependencies = [
+ "olybase-core",
  "olybase-security",
  "olybase-storage",
  "olybase-web",

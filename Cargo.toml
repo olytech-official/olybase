@@ -21,7 +21,7 @@ tracing = "0.1.41"
 thiserror = "2.0.20"
 
 [dependencies]
-#olybase-core = { path = "crates/olybase-core" }
+olybase-core = { path = "crates/olybase-core" }
 olybase-security = { path = "crates/olybase-security", optional = true }
 olybase-storage = { path = "crates/olybase-storage", optional = true }
 olybase-ws = { path = "crates/olybase-ws", optional = true }
