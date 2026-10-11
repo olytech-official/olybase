@@ -22,7 +22,7 @@ pub enum JwtError {
     #[error("JWT private and public key paths must both be provided when autogen is disabled")]
     MissingKeyPaths,
 
-    #[error("Failed to auto-generate RSA keypair: {0}")]
+    #[error("Failed to auto-generate keypair: {0}")]
     AutogenFailed(String),
 }
 
@@ -68,7 +68,7 @@ impl JwtService {
 
             #[cfg(feature = "jwt-autogen")]
             (None, None) => {
-                let key_pair = rcgen::KeyPair::generate_for(&rcgen::PKCS_RSA_SHA256)
+                let key_pair = rcgen::KeyPair::generate_for(&rcgen::PKCS_ED25519)
                     .map_err(|e| JwtError::AutogenFailed(e.to_string()))?;
 
                 (key_pair.serialize_pem(), key_pair.public_key_pem())
@@ -77,9 +77,9 @@ impl JwtService {
             _ => return Err(JwtError::MissingKeyPaths),
         };
 
-        let encoding_key = EncodingKey::from_rsa_pem(private_pem.as_bytes())?;
-        let decoding_key = DecodingKey::from_rsa_pem(public_pem.as_bytes())?;
-        let validation = Validation::new(Algorithm::RS256);
+        let encoding_key = EncodingKey::from_ed_pem(private_pem.as_bytes())?;
+        let decoding_key = DecodingKey::from_ed_pem(public_pem.as_bytes())?;
+        let validation = Validation::new(Algorithm::EdDSA);
 
         Ok(Self {
             ttl,
@@ -100,7 +100,7 @@ impl JwtService {
             custom: claims_data.custom,
         };
 
-        let header = Header::new(Algorithm::RS256);
+        let header = Header::new(Algorithm::EdDSA);
         let token = encode(&header, &claims, &self.encoding_key)?;
 
         let cookie_exp = OffsetDateTime::from_unix_timestamp(exp.timestamp())
