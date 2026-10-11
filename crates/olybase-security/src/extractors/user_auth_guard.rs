@@ -21,6 +21,12 @@ use crate::tokens::jwt::JwtService;
 #[derive(Clone)]
 pub struct AuthenticatedUser<T, ID>(pub UserData<T, ID>);
 
+impl<T, ID> AuthenticatedUser<T, ID> {
+    pub fn into_inner(self) -> UserData<T, ID> {
+        self.0
+    }
+}
+
 impl<T, ID> Deref for AuthenticatedUser<T, ID> {
     type Target = UserData<T, ID>;
 

@@ -1,8 +1,9 @@
 use std::net::{SocketAddr};
-use tokio::net::TcpListener;
+use std::time::Duration;
+use tokio::net::{lookup_host, TcpListener};
 use axum::http::{HeaderValue, Method};
 use axum::http::header::{InvalidHeaderValue, ACCEPT, AUTHORIZATION, CONTENT_TYPE};
-use axum::Router;
+use axum::{BoxError, Router};
 use tower_http::cors::CorsLayer;
 
 pub struct ServerOptions {
@@ -73,7 +74,8 @@ impl Server {
                 Method::OPTIONS,
             ])
             .allow_credentials(true)
-            .allow_headers([AUTHORIZATION, ACCEPT, CONTENT_TYPE]);
+            .allow_headers([AUTHORIZATION, ACCEPT, CONTENT_TYPE])
+            .max_age(Duration::from_secs(3600));
 
         self.cors_layer = Some(cors);
         Ok(self)
@@ -89,29 +91,30 @@ impl Server {
     {
         let mut app = router;
 
-        if let Some(cors) = self.cors_layer.take() {
-            app = app.layer(cors);
-        }
-
         #[cfg(feature = "rate-limit")]
         {
             use tower_governor::governor::GovernorConfigBuilder;
             use tower_governor::GovernorLayer;
             use std::sync::Arc;
 
-            let gov_config = Arc::new(GovernorConfigBuilder::default()
-                .per_second(self.options.rate_limit_per_second)
+            let interval_ms = (1000 / self.options.rate_limit_per_second.max(1)).max(1);
+
+            let config = GovernorConfigBuilder::default()
+                .per_millisecond(interval_ms)
                 .burst_size(self.options.rate_limit_burst)
                 .finish()
-                .expect("Failed to configure rate limiter"));
-
-            app = app.layer(GovernorLayer::new(gov_config));
+                .expect("Failed to configure rate limiter");
+            app = app.layer(GovernorLayer::new(Arc::new(config)));
         }
 
         #[cfg(feature = "compression")]
         {
             use tower_http::compression::CompressionLayer;
             app = app.layer(CompressionLayer::new());
+        }
+
+        if let Some(cors) = self.cors_layer.take() {
+            app = app.layer(cors);
         }
 
         #[cfg(feature = "tracing")]
@@ -147,36 +150,39 @@ impl Server {
                 .layer(SetRequestIdLayer::new(x_request_id, MakeRequestUuid));
         }
 
-        let app = app.with_state(state);
-
-        self.app = Some(app);
+        self.app = Some(app.with_state(state));
         self
     }
 
+    async fn resolve_addr(&self) -> Result<SocketAddr, BoxError> {
+        lookup_host((self.options.host.as_str(), self.options.port))
+            .await?
+            .next()
+            .ok_or_else(|| format!("Could not resolve {}:{}", self.options.host, self.options.port).into())
+    }
+
     /// starts the `router`
-    pub async fn start_server(mut self) -> Result<(), Box<dyn std::error::Error>> {
-        let app = self.app.take().ok_or("Router not initialized. Did you call .with_router(router, state)?")?;
+    pub async fn start_server(mut self) -> Result<(), BoxError> {
+        let app = self
+            .app
+            .take()
+            .ok_or("Router not initialized. Did you call .with_router(router, state)?")?;
 
-        let addr: SocketAddr = format!("{}:{}", self.options.host, self.options.port).parse()?;
-
-        let listener = TcpListener::bind(addr).await?;
+        let addr = self.resolve_addr().await?;
 
         #[cfg(feature = "tracing")]
-        tracing::info!("Starting server on port {}", self.options.port);
+        tracing::info!("Starting server on {}", addr);
 
         #[cfg(feature = "tls")]
         if self.options.use_https {
-            let tls_config = match (
-                &self.options.tls_cert_path,
-                &self.options.tls_key_path
-            ) {
+            let tls_config = match (&self.options.tls_cert_path, &self.options.tls_key_path) {
                 (Some(cert_path), Some(key_path)) => {
                     axum_server::tls_rustls::RustlsConfig::from_pem_file(cert_path, key_path).await?
                 }
 
                 #[cfg(feature = "tls-autogen")]
                 (None, None) => {
-                    eprintln!("[WARN] No CERTS provided. Generating CERTS via rcgen.");
+                    eprintln!("[WARN] No TLS certs provided. Generating a self-signed cert via rcgen.");
 
                     let subject_alt_names = vec!["localhost".to_string()];
                     let cert_key = rcgen::generate_simple_self_signed(subject_alt_names)?;
@@ -184,7 +190,8 @@ impl Server {
                     axum_server::tls_rustls::RustlsConfig::from_pem(
                         cert_key.cert.pem().into_bytes(),
                         cert_key.signing_key.serialize_pem().into_bytes(),
-                    ).await?
+                    )
+                        .await?
                 }
 
                 _ => return Err("Missing TLS cert/key paths. Provide paths or enable 'tls-autogen'".into()),
@@ -199,8 +206,10 @@ impl Server {
             return Ok(());
         }
 
+        let listener = TcpListener::bind(addr).await?;
         println!("Server running on http://{}", addr);
-        axum::serve(listener, app).await?;
+
+        axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>()).await?;
 
         Ok(())
     }

@@ -11,7 +11,7 @@ use olybase_core::user::UserData;
 use crate::gateway_service::GatewayService;
 use crate::ws_router::WsRouter;
 
-async fn handle_socket<T, ID>(
+pub async fn handle_socket<T, ID>(
     socket: WebSocket,
     gateway: Arc<GatewayService<ID>>,
     ws_router: WsRouter<T, ID>,
