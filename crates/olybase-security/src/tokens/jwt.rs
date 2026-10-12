@@ -123,4 +123,14 @@ impl JwtService {
             custom: token_data.claims.custom,
         })
     }
+
+    pub fn create_logout_cookie(&self) -> Cookie<'static> {
+        Cookie::build(("jwt", ""))
+            .path("/")
+            .http_only(true)
+            .secure(true)
+            .same_site(SameSite::Lax)
+            .expires(OffsetDateTime::UNIX_EPOCH)
+            .build()
+    }
 }
