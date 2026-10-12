@@ -46,13 +46,13 @@ impl IntoResponse for TokenError {
     fn into_response(self) -> Response {
         match self {
             TokenError::Missing => {
-                ApiResponse::unauthorized("Authentication token is missing").into_response()
+                ApiResponse::<()>::unauthorized("Authentication token is missing").into_response()
             }
             TokenError::Invalid => {
-                ApiResponse::unauthorized("Invalid or expired authentication token").into_response()
+                ApiResponse::<()>::unauthorized("Invalid or expired authentication token").into_response()
             }
             TokenError::ServiceMissing => {
-                ApiResponse::internal_server_error("Authentication services is unavailable").into_response()
+                ApiResponse::<()>::internal_server_error("Authentication services is unavailable").into_response()
             }
         }
     }

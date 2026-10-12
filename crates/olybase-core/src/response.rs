@@ -47,7 +47,7 @@ impl<T: Serialize> ApiResponse<T> {
     }
 }
 
-impl ApiResponse<()> {
+impl<T> ApiResponse<T> {
     pub fn error(code: StatusCode, message: &str) -> Self {
         Self {
             status: "error".to_string(),
