@@ -39,7 +39,7 @@ pub struct RefreshTokenRecord<U> {
     pub revoked_at: Option<DateTime<Utc>>,
 }
 
-pub struct IssuedRefreshToken<U = Uuid> {
+pub struct IssuedRefreshToken<U> {
     pub plaintext_token: String,
     pub record: RefreshTokenRecord<U>,
 }
